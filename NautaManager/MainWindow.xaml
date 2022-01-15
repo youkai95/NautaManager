@@ -1,0 +1,68 @@
+﻿<Window x:Class="NautaManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NautaManager"
+        mc:Ignorable="d"
+        Title="NautaManager" Height="280" Width="460">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="9*"/>
+            <ColumnDefinition Width="22*"/>
+            <ColumnDefinition Width="9*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40*"/>
+            <RowDefinition Height="124*"/>
+            <RowDefinition Height="37*"/>
+            <RowDefinition Height="63*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.ColumnSpan="3">
+            <Menu DockPanel.Dock="Top">
+                <MenuItem Header="_File">
+                    <MenuItem Name="addUserMenu" Header="_Añadir usuario" Click="addUserMenu_Click"/>
+                    <MenuItem Name="saveMenu" Header="_Guardar" Click="saveMenu_Click"/>
+                    <Separator/>
+                    <MenuItem Header="_Exit" />
+                </MenuItem>
+            </Menu>
+            <TextBox AcceptsReturn="True" />
+        </DockPanel>
+        <DataGrid Grid.ColumnSpan="3" Name="usersTable" ItemsSource="{Binding Sessions}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                  SelectionMode="Single" IsReadOnly="True" Margin="0,40,0,0" Grid.RowSpan="2">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Conectar" Name="cmCnx" Click="btnConnect_Click"  />
+                    <MenuItem Header="Desconectar" Name="cmDnx" Click="btnDisconnect_Click" />
+                    <MenuItem Header="Swap" Name="cmSwap" Click="btnSwap_Click" />
+                    <MenuItem Name="menuExtraItems" Header="Extras"/>
+
+                    <Separator />
+                    <MenuItem Header="Eliminar" Name="cmDelete" Click="btnDelete_Click" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Usuario" Binding="{Binding Username}"/>
+                <DataGridTextColumn Header="Tiempo" Binding="{Binding Path=Status.RemainingTime}"/>
+                <DataGridTextColumn Header="Credito" Binding="{Binding Path=Status.AvailableCredit}"/>
+                <DataGridTextColumn Header="Consumido" Binding="{Binding Path=ConsumedTime}"/>
+                <DataGridTextColumn Header="Activa" Binding="{Binding Path=IsActive}"/>
+                <DataGridTemplateColumn Header="Acciones" >
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Editar" Name="editButton" Click="editButton_Click"/>
+                                <Button Content="Eliminar" Name="removeButton" Click="btnDelete_Click"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Label Grid.Row="2" Grid.Column="1" Content="Mensaje:" VerticalAlignment="Bottom" HorizontalAlignment="Center" Height="26" Width="56"/>
+        <TextBlock Name="lastError" Grid.Row="3" Grid.Column="1" TextAlignment="Center" TextWrapping="Wrap" Margin="6"/>
+    </Grid>
+
+</Window>
