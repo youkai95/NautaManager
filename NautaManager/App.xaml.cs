@@ -21,12 +21,16 @@ namespace NautaManager
         public App()
         {
             var host = Host.CreateDefaultBuilder()
-                .ConfigureServices((_, services) =>
-                    services.AddSingleton<IUserManager, UserManager>()
-                            .AddSingleton<IUsersRepository, UsersRepository>()
-                            .AddSingleton<MainWindow>())
+                .ConfigureServices((_, services) => ConfigureServices(services))
                 .Build();
             ServiceProvider = host.Services;
+        }
+
+        private void ConfigureServices(IServiceCollection services)
+        {
+            services.AddSingleton<IUserManager, UserManager>()
+                            .AddSingleton<IUsersRepository, UsersRepository>()
+                            .AddSingleton<MainWindow>();
         }
 
         private void Application_Startup(object sender, StartupEventArgs e)
