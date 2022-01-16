@@ -80,7 +80,7 @@ namespace NautaManager.Models
         public event PropertyChangedEventHandler PropertyChanged;
         protected void RaisePropertyChanged([CallerMemberName] string name = null)
         {
-            App.Current.Dispatcher.Invoke(() =>
+            App.Current?.Dispatcher.Invoke(() =>
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
             });
