@@ -35,14 +35,15 @@ namespace NautaManager.Handlers
             return r;
         }
 
-        public UserSession CreateSession(string username, string password)
+        public async Task<UserSession> CreateSession(string username, string password)
         {
             var model = new UserSession()
             {
                 Username = username,
                 Password = password,
+                Status = new AccountStatus()
             };
-            if(Repository.AddSession(model))
+            if(await Repository.AddSession(model))
                 return model;
             return null;
         }
@@ -80,9 +81,9 @@ namespace NautaManager.Handlers
 
         public bool Save() => Repository.SaveChanges();
 
-        public List<UserSession> GetAll()
+        public async Task<List<UserSession>> GetAllAsync()
         {
-            var sessions = Repository.GetAll();
+            var sessions = await Repository.GetAllAsync();
             foreach (var item in sessions)
             {
                 if (item.ATTRIBUTE_UUID != null)

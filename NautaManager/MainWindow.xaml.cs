@@ -34,9 +34,6 @@ namespace NautaManager
         {
             InitializeComponent();
             UserManager = manager;
-            Sessions = UserManager.GetAll();
-            usersTable.ItemsSource = Sessions;
-            LoadExtraFeatures();
         }
 
         private void LoadExtraFeatures()
@@ -118,6 +115,13 @@ namespace NautaManager
         {
             UserManager.Save();
             lastError.Text = "Informacion actualizada";
+        }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            Sessions = await UserManager.GetAllAsync();
+            usersTable.ItemsSource = Sessions;
+            LoadExtraFeatures();
         }
     }
 }

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,8 +23,15 @@ namespace NautaManager.Models
     public class UserSession : INotifyPropertyChanged
     {
         const string BaseUrl = "https://secure.etecsa.net:8443";
-        public string Username { get; set; }
+
+        byte[] _password;
         bool _active = false;
+        AccountStatus _status;
+        long elapsedSeconds;
+        System.Timers.Timer timer = new System.Timers.Timer(1000);
+        HttpClientHandler handler;
+
+        public string Username { get; set; }
         public bool IsActive
         {
             get => _active;
@@ -33,22 +41,8 @@ namespace NautaManager.Models
                 RaisePropertyChanged();
             }
         }
-        public CookieContainer CookieContainer { get; set; } = new CookieContainer();
-        HttpClientHandler handler;
-        HttpClient ClientSession { get; set; }
-
-
-        byte[] _password;
-        AccountStatus _status;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void RaisePropertyChanged([CallerMemberName] string name = null)
-        {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-            });
-        }
+        CookieContainer CookieContainer { get; set; }
+        public HttpClient ClientSession { get; private set; }
         public string Password
         {
             get
@@ -61,7 +55,6 @@ namespace NautaManager.Models
                 RaisePropertyChanged();
             }
         }
-
         public AccountStatus Status
         {
             get
@@ -74,8 +67,6 @@ namespace NautaManager.Models
                 RaisePropertyChanged();
             }
         }
-        long elapsedSeconds;
-        System.Timers.Timer timer = new System.Timers.Timer(1000);
         public string ConsumedTime
         {
             get => string.Format("{0:D2}:{1:D2}:{2:D2}", elapsedSeconds / 60 / 60, elapsedSeconds / 60 % 60, elapsedSeconds % 60);
@@ -83,14 +74,28 @@ namespace NautaManager.Models
         public string CSRFHW { get; private set; }
         public string wlanuserip { get; private set; }
         public string ATTRIBUTE_UUID { get; private set; }
-
-        public Dictionary<string, string> FormData { get; set; }
+        public Dictionary<string, string> FormData { get; private set; }
         string LoginURL { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void RaisePropertyChanged([CallerMemberName] string name = null)
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            });
+        }
 
         public UserSession()
         {
-            Status = new AccountStatus();
             timer.Elapsed += TickSecond;
+        }
+
+        public UserSession(string _CSRFHW, string _ATTRIBUTE_UUID, string _wlanuserip) : this()
+        {
+            CSRFHW = _CSRFHW;
+            ATTRIBUTE_UUID = _ATTRIBUTE_UUID;
+            wlanuserip = _wlanuserip;
         }
 
         private void TickSecond(object sender, ElapsedEventArgs e)
@@ -99,22 +104,22 @@ namespace NautaManager.Models
             RaisePropertyChanged("ConsumedTime");
         }
 
-        public bool InitSession()
+        public async Task<bool> InitSession()
         {
-            if (UserManager.IsConnected())
+            if (await UserManager.IsConnectedAsync())
                 return false;
             Dictionary<string, string> formData = new Dictionary<string, string>();
             HttpResponseMessage response;
             try
             {
-                response = ClientSession.GetAsync(BaseUrl).Result;
+                response = await ClientSession.GetAsync(BaseUrl);
             }
             catch
             {
                 return false;
             }
             HtmlDocument getRequest = new HtmlDocument();
-            getRequest.LoadHtml(response.Content.ReadAsStringAsync().Result);
+            getRequest.LoadHtml(await response.Content.ReadAsStringAsync());
             var form = getRequest.GetElementbyId("formulario");
             var info = form.ChildNodes.Where(n => n.Name == "input").Select(n => new { Name = n.GetAttributeValue("name", null), Value = n.GetAttributeValue("value", null) });
             foreach (var input in info)
@@ -133,29 +138,41 @@ namespace NautaManager.Models
             return true;
         }
 
-        public static implicit operator UserSession(UserSessionStore store)
-        {
-            var model = new UserSession()
-            {
-                Username = store.Username,
-                Status = store.Status ?? new AccountStatus(),
-                CSRFHW = store.CSRFHW,
-                ATTRIBUTE_UUID = store.ATTRIBUTE_UUID,
-                wlanuserip = store.wlanuserip,
-                IsActive = store.ATTRIBUTE_UUID != null
-            };
-            model.InitClientSession();
-            if(model.ATTRIBUTE_UUID == null)
-                model.InitSession();
-            model.LoadPassword(store.Password);
-            return model;
-        }
-
         public void InitClientSession()
         {
-            CookieContainer = UserSessionStore.LoadHTTPClient(Username) ?? CookieContainer;
+            CookieContainer = LoadHTTPSession();
             handler = new HttpClientHandler() { CookieContainer = CookieContainer, UseCookies = true };
             ClientSession = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) };
+        }
+
+        /// <summary>
+        /// this function loads the CookieContainer that contains the Session Cookies
+        /// </summary>
+        public CookieContainer LoadHTTPSession(string name = null)
+        {
+            if (File.Exists(name))
+            {
+                // LOAD
+                FileStream inStr = new FileStream(name ?? Username, FileMode.Open);
+                BinaryFormatter bf = new BinaryFormatter();
+                var CookieJar = bf.Deserialize(inStr) as CookieContainer;
+                inStr.Close();
+                return CookieJar;
+            }
+            return new CookieContainer();
+        }
+
+        /// <summary>
+        /// this function saves the sessioncookies to file
+        /// </summary>
+        /// <param name="CookieJar"></param>
+        public void SaveHTTPSession(string name = null)
+        {
+            // SAVE client Cookies
+            FileStream stream = new FileStream(name ?? Username, FileMode.Create);
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(stream, CookieContainer);
+            stream.Close();
         }
 
         internal void LoadPassword(string serializedPassword)
@@ -165,7 +182,7 @@ namespace NautaManager.Models
 
         public async Task<LoginResult> TryLogin()
         {
-            if(FormData == null && !InitSession())
+            if(FormData == null && !await InitSession())
             {
                 return new LoginResult { Result = false, Message = "No es posible crear una sesion" };
             }
@@ -255,7 +272,7 @@ namespace NautaManager.Models
 
         public async Task<string> UpdateAccountCredit()
         {
-            if (CSRFHW == null && !InitSession())
+            if (CSRFHW == null && !await InitSession())
                 return "No fue posible obtener una sesion";
             if(ATTRIBUTE_UUID != null || await UserManager.IsConnectedAsync())
             {

@@ -1,4 +1,6 @@
-﻿using NautaManager.Models;
+﻿using NautaManager.Factories;
+using NautaManager.Interfaces;
+using NautaManager.Models;
 using NautaManager.Repositories.Models;
 using Newtonsoft.Json;
 using System;
@@ -9,20 +11,22 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NautaManager.Repositories
 {
-    class UsersRepository : IUsersRepository
+    class UsersRepository : IUsersRepository, IAsyncInitialization
     {
         string _sessionsStorage = "sessions.json";
         Dictionary<string, UserSession> SessionsCache = new Dictionary<string, UserSession>();
+        public Task Initialized { get; }
 
         public UsersRepository()
         {
-            Initialize();
+            Initialized = Initialize();
         }
 
-        private void Initialize()
+        private async Task Initialize()
         {
             if (!File.Exists(_sessionsStorage))
                 return;
@@ -32,20 +36,21 @@ namespace NautaManager.Repositories
                 return;
             
             foreach (var kv in json)
-                SessionsCache.Add(kv.Key, kv.Value);
+                SessionsCache.Add(kv.Key, await SessionFactory.LoadSessionAsync(kv.Value));
         }
 
-        public List<UserSession> GetAll()
+        public async Task<List<UserSession>> GetAllAsync()
         {
+            await Initialized;
             return SessionsCache.Values.ToList();
         }
  
-        public bool AddSession(UserSession user)
+        public async Task<bool> AddSession(UserSession user)
         {
             if (SessionsCache.TryAdd(user.Username, user))
             {
                 user.InitClientSession();
-                user.InitSession();
+                await user.InitSession();
                 SaveChanges();
                 return true;
             }
@@ -84,7 +89,7 @@ namespace NautaManager.Repositories
             var dict = new Dictionary<string, UserSessionStore>();
             foreach(var session in SessionsCache.Values)
             {
-                dict.Add(session.Username, session);
+                dict.Add(session.Username, SessionFactory.CastSessionToStore(session));
             }
             file.Write(JsonConvert.SerializeObject(dict));
             return true;

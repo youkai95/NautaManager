@@ -26,7 +26,7 @@ namespace NautaManager.Handlers
         /// <param name="username">Session email (username)</param>
         /// <param name="password">Session password</param>
         /// <returns>The new object that represent the new created session or null in case of the session is already created</returns>
-        UserSession CreateSession(string username, string password);
+        Task<UserSession> CreateSession(string username, string password);
         /// <summary>
         /// Removes an existing session from the application
         /// </summary>
@@ -60,7 +60,7 @@ namespace NautaManager.Handlers
         /// Retrieve all the sessions contained in the application
         /// </summary>
         /// <returns>The session list</returns>
-        List<UserSession> GetAll();
+        Task<List<UserSession>> GetAllAsync();
         /// <summary>
         /// Disconnect the active account and connect <paramref name="newSession"/>
         /// </summary>

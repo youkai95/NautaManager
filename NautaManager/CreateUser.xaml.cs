@@ -32,14 +32,14 @@ namespace NautaManager
             }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
             if (NewSession == null)
             {
                 if (username.Text != null && username.Text != string.Empty &&
                     password.Password != null && password.Password != string.Empty)
                 {
-                    NewSession = Manager.CreateSession(username.Text, password.Password);
+                    NewSession = await Manager.CreateSession(username.Text, password.Password);
                     DialogResult = true;
                     Close();
                 }

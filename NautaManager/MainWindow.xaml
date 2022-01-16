@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NautaManager"
         mc:Ignorable="d"
-        Title="NautaManager" Height="280" Width="460">
+        Title="NautaManager" Height="280" Width="460"
+        Loaded="Window_Loaded">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="9*"/>

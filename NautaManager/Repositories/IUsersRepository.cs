@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NautaManager.Repositories
 {
@@ -11,13 +12,13 @@ namespace NautaManager.Repositories
         /// Retrieve all the sessions contained in the application. The sessions are only loaded from HDD when application starts up.
         /// </summary>
         /// <returns>The session list</returns>
-        List<UserSession> GetAll();
+        Task<List<UserSession>> GetAllAsync();
         /// <summary>
         /// Create and store a new user session
         /// </summary>
         /// <param name="user">Session representation to store</param>
         /// <returns>true if the account was successfully created and stored, false otherwise</returns>
-        bool AddSession(UserSession user);
+        Task<bool> AddSession(UserSession user);
         /// <summary>
         /// Removes an existing session from the application
         /// </summary>
