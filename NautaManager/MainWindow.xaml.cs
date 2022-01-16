@@ -34,6 +34,7 @@ namespace NautaManager
         {
             InitializeComponent();
             UserManager = manager;
+            lastError.Text = "Cargando...";
         }
 
         private void LoadExtraFeatures()
@@ -122,6 +123,7 @@ namespace NautaManager
             Sessions = await UserManager.GetAllAsync();
             usersTable.ItemsSource = Sessions;
             LoadExtraFeatures();
+            lastError.Text = string.Empty;
         }
     }
 }
