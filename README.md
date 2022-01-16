@@ -1,5 +1,5 @@
 # NautaManager
-A simple WPF application to easily manage your Nauta accounts made for fun and to practice some design patterns in WPF. This software has the following features:
+A simple WPF application to easily manage your Nauta accounts. It was made for fun and to practice some design patterns in WPF. This software has the following features:
 
 - Multiple accounts in a single application.
 - Simple interface. No extra decorations.
@@ -10,7 +10,7 @@ A simple WPF application to easily manage your Nauta accounts made for fun and t
 ## How to add features
 ### New Extra items
 It is as fast as implement a new class (I recommend inside ExtraItems folder to keep an organized project) and inherit from `ExtraMenuFeature` abstract class. Implement
-the abstractions and you are ready to go. Moreover, you can use dependency injection to have some of the shared IoC containers inside your module!
+the abstractions and you are ready to go. Moreover, you can use dependency injection to bring some scoped type inside your module!
 
 ```
     class NewItem : ExtraMenuFeature
@@ -44,5 +44,3 @@ Go to `App.xaml.cs` and add as many DI types to include in the IoC container as 
 - Some unit testing for the implemented features and functions.
 - A more intuitive interface.
 - Whatever the future brings to us...
-
-##
