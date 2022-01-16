@@ -177,7 +177,15 @@ namespace NautaManager.Models
                 ["password"] = Password
             };
             HttpContent request = new FormUrlEncodedContent(formData);
-            var response = await ClientSession.PostAsync(LoginURL, request);
+            HttpResponseMessage response;
+            try
+            {
+                response = await ClientSession.PostAsync(LoginURL, request);
+            }
+            catch
+            {
+                return new LoginResult { Result = false, Message = "No es posible conectar con el servicio NAUTA" };
+            }
             HtmlDocument parser = new HtmlDocument();
             string strResponse = await response.Content.ReadAsStringAsync();
 
@@ -219,8 +227,17 @@ namespace NautaManager.Models
             {
                 return new LogoutResult { Result = false, Message = "No existen datos de inicio de sesion para esta cuenta" };
             }
-            var response = await ClientSession.GetAsync($"{BaseUrl}/LogoutServlet?CSRFHW={CSRFHW}&ATTRIBUTE_UUID={ATTRIBUTE_UUID}&username={Username}&wlanuserip={wlanuserip}");
-            if(!response.IsSuccessStatusCode)
+            HttpResponseMessage response;
+            try
+            {
+                response = await ClientSession.GetAsync($"{BaseUrl}/LogoutServlet?CSRFHW={CSRFHW}&ATTRIBUTE_UUID={ATTRIBUTE_UUID}&username={Username}&wlanuserip={wlanuserip}");
+            }
+            catch
+            {
+                return new LogoutResult { Result = false, Message = "No es posible conectar con el servicio NAUTA" };
+            }
+
+            if (!response.IsSuccessStatusCode)
             {
                 return new LogoutResult() { Result = false };
             }
@@ -251,14 +268,22 @@ namespace NautaManager.Models
                 ["password"] = Password,
                 ["wlanuserip"] = wlanuserip,
             });
-            var response = await ClientSession.PostAsync($"{BaseUrl}/EtecsaQueryServlet", content);
-            HtmlDocument doc = new HtmlDocument();
-            doc.LoadHtml(await response.Content.ReadAsStringAsync());
-            var node = doc.GetElementbyId("sessioninfo")?.SelectSingleNode("//tbody/tr[2]/td[2]");
-            if (node == null)
+
+            try
+            {
+                var response = await ClientSession.PostAsync($"{BaseUrl}/EtecsaQueryServlet", content);
+                HtmlDocument doc = new HtmlDocument();
+                doc.LoadHtml(await response.Content.ReadAsStringAsync());
+                var node = doc.GetElementbyId("sessioninfo")?.SelectSingleNode("//tbody/tr[2]/td[2]");
+                if (node == null)
+                    return "No fue posible obtener la informacion";
+                Status.AvailableCredit = node.InnerText.Trim();
+                return string.Empty;
+            }
+            catch
+            {
                 return "No fue posible obtener la informacion";
-            Status.AvailableCredit = node.InnerText.Trim();
-            return string.Empty;
+            }
         }
 
         public async Task<string> UpdateAccountTime()
@@ -275,14 +300,15 @@ namespace NautaManager.Models
                 ["wlanuserip"] = wlanuserip,
                 ["ATTRIBUTE_UUID"] = ATTRIBUTE_UUID
             });
-            var response = await ClientSession.PostAsync($"{BaseUrl}/EtecsaQueryServlet", content);
-            string timeStr = await response.Content.ReadAsStringAsync();
             try
             {
+                var response = await ClientSession.PostAsync($"{BaseUrl}/EtecsaQueryServlet", content);
+                string timeStr = await response.Content.ReadAsStringAsync();
+
                 string[] elements = timeStr.Split(':');
                 TimeSpan ts = new TimeSpan(int.Parse(elements[0]),
                                            int.Parse(elements[1]),
-                                           int.Parse(elements[2]));      
+                                           int.Parse(elements[2]));
                 Status.RTime = ts;
                 return string.Empty;
             }

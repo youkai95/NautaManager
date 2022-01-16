@@ -93,22 +93,36 @@ namespace NautaManager.Handlers
 
         public static async Task<bool> IsConnectedAsync()
         {
-            HttpClient client = new HttpClient() { Timeout = TimeSpan.FromSeconds(5) };
-            var response = await client.GetAsync(CheckUrl);
-            var str = await response.Content.ReadAsStringAsync();
-            if(str.Contains("https://secure.etecsa.net:8443"))
+            try
+            {
+                HttpClient client = new HttpClient() { Timeout = TimeSpan.FromSeconds(10) };
+                var response = await client.GetAsync(CheckUrl);
+                var str = await response.Content.ReadAsStringAsync();
+                if (str.Contains("https://secure.etecsa.net:8443"))
+                    return false;
+                return true;
+            }
+            catch (TaskCanceledException)
+            {
                 return false;
-            return true;
+            }
         }
 
         public static bool IsConnected()
         {
-            HttpClient client = new HttpClient() { Timeout = TimeSpan.FromSeconds(5) };
-            var response = client.GetAsync(CheckUrl).Result;
-            var str = response.Content.ReadAsStringAsync().Result;
-            if (str.Contains("https://secure.etecsa.net:8443"))
-                return false;
-            return true;
+            try
+            {
+                HttpClient client = new HttpClient() { Timeout = TimeSpan.FromSeconds(10) };
+                var response = client.GetAsync(CheckUrl).Result;
+                var str = response.Content.ReadAsStringAsync().Result;
+                if (str.Contains("https://secure.etecsa.net:8443"))
+                    return false;
+                return true;
+            }
+            catch (AggregateException)
+            {
+                return true;
+            }
         }
 
         public bool RemoveSession(UserSession userSession)
